@@ -112,13 +112,13 @@ def BoxText(original, ratio_threshold=0.45, angle_threshold=10.0, margin=10):
                 angles.append(angle)
                 interested_contours.append(contours[idx])
 
-NiceIdx = removeOutliers(angles, angle_threshold)
-for idx in range(len(interested_contours)):
-    if idx in NiceIdx:
-        rect = cv2.minAreaRect(interested_contours[idx])
-        box = cv2.boxPoints(rect)
-        box = np.int0(box)
-        cv2.drawContours(Boxed, [box], 0, 255, margin)
+    NiceIdx = removeOutliers(angles, angle_threshold)
+    for idx in range(len(interested_contours)):
+        if idx in NiceIdx:
+            rect = cv2.minAreaRect(interested_contours[idx])
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
+            cv2.drawContours(Boxed, [box], 0, 255, margin)
     return Boxed
 
 
@@ -162,20 +162,20 @@ def perspective_correct(deskewed):
     # cv2.imwrite('biggest_contour.png', temp)
     x, y, w, h = cv2.boundingRect(largest_contour)
 
-quad_pts = np.float32([(best_poly[0][0][0], best_poly[0][0][1]),
-                       (best_poly[1][0][0], best_poly[1][0][1]),
-                       (best_poly[2][0][0], best_poly[2][0][1]),
-                       (best_poly[3][0][0], best_poly[3][0][1])])
-square_pts = np.float32([(x, y),
-                         (x, y + h),
-                         (x + w, y),
-                         (x + w, y + h)])
-best_quad = fit_quad(quad_pts, square_pts)
-best_quad = np.float32([best_quad[0], best_quad[1], best_quad[2], best_quad[3]])
-(h, w) = deskewed.shape[:2]
-transmtx = cv2.getPerspectiveTransform(best_quad, square_pts)
-corrected = cv2.warpPerspective(deskewed, transmtx, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
-return corrected, transmtx
+    quad_pts = np.float32([(best_poly[0][0][0], best_poly[0][0][1]),
+                           (best_poly[1][0][0], best_poly[1][0][1]),
+                           (best_poly[2][0][0], best_poly[2][0][1]),
+                           (best_poly[3][0][0], best_poly[3][0][1])])
+    square_pts = np.float32([(x, y),
+                             (x, y + h),
+                             (x + w, y),
+                             (x + w, y + h)])
+    best_quad = fit_quad(quad_pts, square_pts)
+    best_quad = np.float32([best_quad[0], best_quad[1], best_quad[2], best_quad[3]])
+    (h, w) = deskewed.shape[:2]
+    transmtx = cv2.getPerspectiveTransform(best_quad, square_pts)
+    corrected = cv2.warpPerspective(deskewed, transmtx, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
+    return corrected, transmtx
 
 
 def crop_card(original):
@@ -227,11 +227,11 @@ def manual_crop(original, quad_pt1, quad_pt2, quad_pt3, quad_pt4):
                              (x, y + h),
                              (x + w, y),
                              (x + w, y + h)])
-                             best_quad = fit_quad(quad_pts, square_pts)
-best_quad = np.float32([best_quad[0], best_quad[1], best_quad[2], best_quad[3]])
-transmtx = cv2.getPerspectiveTransform(best_quad, square_pts)
-corrected = cv2.warpPerspective(deskewed, transmtx, (wd, hi), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
-return corrected[x:x + w, y:y + h]
+    best_quad = fit_quad(quad_pts, square_pts)
+    best_quad = np.float32([best_quad[0], best_quad[1], best_quad[2], best_quad[3]])
+    transmtx = cv2.getPerspectiveTransform(best_quad, square_pts)
+    corrected = cv2.warpPerspective(deskewed, transmtx, (wd, hi), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
+    return corrected[x:x + w, y:y + h]
 
 
 if __name__ == "__main__":
