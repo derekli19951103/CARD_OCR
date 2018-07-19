@@ -24,28 +24,28 @@ def shuffle_list(l):
     comb.append([l[0], l[2], l[3], l[1]])
     comb.append([l[0], l[3], l[2], l[1]])
     comb.append([l[0], l[3], l[1], l[2]])
-
+    
     comb.append([l[1], l[0], l[2], l[3]])
     comb.append([l[1], l[0], l[3], l[2]])
     comb.append([l[1], l[2], l[0], l[3]])
     comb.append([l[1], l[2], l[3], l[0]])
     comb.append([l[1], l[3], l[2], l[0]])
     comb.append([l[1], l[3], l[0], l[2]])
-
+    
     comb.append([l[2], l[1], l[0], l[3]])
     comb.append([l[2], l[1], l[3], l[0]])
     comb.append([l[2], l[0], l[1], l[3]])
     comb.append([l[2], l[0], l[3], l[1]])
     comb.append([l[2], l[3], l[0], l[1]])
     comb.append([l[2], l[3], l[1], l[0]])
-
+    
     comb.append([l[3], l[1], l[2], l[0]])
     comb.append([l[3], l[1], l[0], l[2]])
     comb.append([l[3], l[2], l[1], l[0]])
     comb.append([l[3], l[2], l[0], l[1]])
     comb.append([l[3], l[0], l[2], l[1]])
     comb.append([l[3], l[0], l[1], l[2]])
-
+    
     return comb
 
 
@@ -85,7 +85,7 @@ def BoxText(original, ratio_threshold=0.45, angle_threshold=10.0, margin=10):
     # ratio + means less boxes, angle + means more boxes
     preprocess = preprocessing(original)
     _, contours, hierarchy = cv2.findContours(preprocess, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
+    
     Boxed = preprocess.copy() * 0
     mask = preprocess.copy() * 0
     (h, w) = original.shape[:2]
@@ -102,7 +102,7 @@ def BoxText(original, ratio_threshold=0.45, angle_threshold=10.0, margin=10):
         box = cv2.boxPoints(rect)
         area = cv2.contourArea(np.array([box]))
         cv2.drawContours(mask, contours, idx, 255, -1)
-
+        
         if area >= min_area:
             r = float(cv2.countNonZero(mask[y:y + h - 1, x:x + w - 1])) / area
             if r > ratio_threshold and min_width <= w <= max_width and min_height <= h <= max_height:
@@ -112,13 +112,13 @@ def BoxText(original, ratio_threshold=0.45, angle_threshold=10.0, margin=10):
                 angles.append(angle)
                 interested_contours.append(contours[idx])
 
-    NiceIdx = removeOutliers(angles, angle_threshold)
-    for idx in range(len(interested_contours)):
-        if idx in NiceIdx:
-            rect = cv2.minAreaRect(interested_contours[idx])
-            box = cv2.boxPoints(rect)
-            box = np.int0(box)
-            cv2.drawContours(Boxed, [box], 0, 255, margin)
+NiceIdx = removeOutliers(angles, angle_threshold)
+for idx in range(len(interested_contours)):
+    if idx in NiceIdx:
+        rect = cv2.minAreaRect(interested_contours[idx])
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
+        cv2.drawContours(Boxed, [box], 0, 255, margin)
     return Boxed
 
 
@@ -140,9 +140,8 @@ def perspective_correct(deskewed):
     edges = cv2.Canny(hsv, 100, 200)
     morph_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 20))
     connected = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, morph_kernel)
-    # using RETR_EXTERNAL instead of RETR_CCOMP
     _, contours, hierarchy = cv2.findContours(connected, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
+    
     largest_area = 0
     largest_contour = None
     idx = 0
@@ -160,24 +159,23 @@ def perspective_correct(deskewed):
             best_poly = contour_poly
     temp = deskewed.copy()
     cv2.drawContours(temp, contours, l_idx, (0, 255, 0), 10)
-    # cv2.imwrite('big_c.png', temp)
+    # cv2.imwrite('biggest_contour.png', temp)
     x, y, w, h = cv2.boundingRect(largest_contour)
 
-    # getting pts
-    quad_pts = np.float32([(best_poly[0][0][0], best_poly[0][0][1]),
-                           (best_poly[1][0][0], best_poly[1][0][1]),
-                           (best_poly[2][0][0], best_poly[2][0][1]),
-                           (best_poly[3][0][0], best_poly[3][0][1])])
-    square_pts = np.float32([(x, y),
-                             (x, y + h),
-                             (x + w, y),
-                             (x + w, y + h)])
-    best_quad = fit_quad(quad_pts, square_pts)
-    best_quad = np.float32([best_quad[0], best_quad[1], best_quad[2], best_quad[3]])
-    (h, w) = deskewed.shape[:2]
-    transmtx = cv2.getPerspectiveTransform(best_quad, square_pts)
-    corrected = cv2.warpPerspective(deskewed, transmtx, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
-    return corrected, transmtx
+quad_pts = np.float32([(best_poly[0][0][0], best_poly[0][0][1]),
+                       (best_poly[1][0][0], best_poly[1][0][1]),
+                       (best_poly[2][0][0], best_poly[2][0][1]),
+                       (best_poly[3][0][0], best_poly[3][0][1])])
+square_pts = np.float32([(x, y),
+                         (x, y + h),
+                         (x + w, y),
+                         (x + w, y + h)])
+best_quad = fit_quad(quad_pts, square_pts)
+best_quad = np.float32([best_quad[0], best_quad[1], best_quad[2], best_quad[3]])
+(h, w) = deskewed.shape[:2]
+transmtx = cv2.getPerspectiveTransform(best_quad, square_pts)
+corrected = cv2.warpPerspective(deskewed, transmtx, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
+return corrected, transmtx
 
 
 def crop_card(original):
@@ -188,12 +186,12 @@ def crop_card(original):
     redeskewed, _, affine2 = deskew(deperspective)
     # cv2.imwrite('depers.png', deperspective)
     # cv2.imwrite('redeskewed.png',redeskewed)
-
+    
     boxed = BoxText(deperspective)
     coords = np.column_stack(np.where(boxed == 255))
     x, y, w, h = cv2.boundingRect(coords)
     card1 = redeskewed[x:x + w, y:y + h]
-
+    
     (h, w) = ori_box.shape[:2]
     ori_box = cv2.warpAffine(ori_box, affine1, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
     ori_box = cv2.warpPerspective(ori_box, shear, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
@@ -201,16 +199,16 @@ def crop_card(original):
     coords = np.column_stack(np.where(ori_box == 255))
     x, y, w, h = cv2.boundingRect(coords)
     card2 = redeskewed[x:x + w, y:y + h]
-
+    
     area1 = card1.shape[0] * card1.shape[1]
     area2 = card2.shape[0] * card1.shape[1]
     if area1 >= area2:
         card = card1
-        # cv2.imwrite('final_box.png', boxed)
+    # cv2.imwrite('final_box.png', boxed)
     elif area2 > area1:
         card = card2
-        # cv2.imwrite('final_box.png',ori_box)
-
+    # cv2.imwrite('final_box.png',ori_box)
+    
     return card
 
 
@@ -229,11 +227,11 @@ def manual_crop(original, quad_pt1, quad_pt2, quad_pt3, quad_pt4):
                              (x, y + h),
                              (x + w, y),
                              (x + w, y + h)])
-    best_quad = fit_quad(quad_pts, square_pts)
-    best_quad = np.float32([best_quad[0], best_quad[1], best_quad[2], best_quad[3]])
-    transmtx = cv2.getPerspectiveTransform(best_quad, square_pts)
-    corrected = cv2.warpPerspective(deskewed, transmtx, (wd, hi), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
-    return corrected[x:x + w, y:y + h]
+                             best_quad = fit_quad(quad_pts, square_pts)
+best_quad = np.float32([best_quad[0], best_quad[1], best_quad[2], best_quad[3]])
+transmtx = cv2.getPerspectiveTransform(best_quad, square_pts)
+corrected = cv2.warpPerspective(deskewed, transmtx, (wd, hi), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
+return corrected[x:x + w, y:y + h]
 
 
 if __name__ == "__main__":
@@ -260,3 +258,4 @@ if __name__ == "__main__":
         card = manual_crop(original, quad_pt1, quad_pt2, quad_pt3, quad_pt4)
         print(filename, ' finished processing')
         cv2.imwrite('cardfinal/' + filename + '.png', card)
+
